@@ -1,57 +1,119 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>日記一覧 - 日記管理アプリ</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    </head>
-    <body>
-        <div class="container">
-            <h1>📖 日記一覧</h1>
-
-            <!-- ナビゲーション -->
-            <div class="nav">
-                <a href="{{ url_for('post') }}">✏️ 新しい日記を書く</a>
-            </div>
-
-            <!-- メッセージ表示 -->
-            {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
-            <div class="message {{ category }}">{{ message }}</div>
-            {% endfor %} {% endif %} {% endwith %}
-
-            <!-- 日記一覧 -->
-            {% if diaries %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日記一覧 - 日記管理アプリ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>📖 日記一覧</h1>
+        
+        <!-- ナビゲーション -->
+        <div class="nav">
+            <a href="{{ url_for('post') }}">✏️ 新しい日記を書く</a>
+        </div>
+        
+        <!-- 検索フォーム -->
+        <div class="search-form">
+            <form method="GET" action="{{ url_for('index') }}">
+                <div class="search-input-group">
+                    <input type="text" name="search" value="{{ search_query }}" 
+                           placeholder="日記の内容や日付で検索...">
+                    <button type="submit" class="btn btn-primary">🔍 検索</button>
+                    {% if search_query %}
+                        <a href="{{ url_for('index') }}" class="btn">クリア</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        
+        <!-- 並び替えオプション -->
+        <div class="sort-options">
+            <form method="GET" action="{{ url_for('index') }}" class="sort-form">
+                <input type="hidden" name="search" value="{{ search_query }}">
+                <select name="sort" onchange="this.form.submit()">
+                    <option value="date" {% if sort_by == 'date' %}selected{% endif %}>日付順</option>
+                    <option value="id" {% if sort_by == 'id' %}selected{% endif %}>投稿順</option>
+                </select>
+                <select name="order" onchange="this.form.submit()">
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>新しい順</option>
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>古い順</option>
+                </select>
+            </form>
+        </div>
+        
+        <!-- メッセージ表示 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- 日記一覧 -->
+        {% if diaries %}
+            <!-- 表示件数情報 -->
+            {% if pagination %}
+                <div class="result-info">
+                    <p>{{ pagination.start_index }}〜{{ pagination.end_index }}件目 
+                       (全{{ pagination.total }}件)</p>
+                </div>
+            {% endif %}
+            
             <div class="diary-list">
                 {% for diary in diaries %}
-                <div class="diary-card">
-                    <div class="diary-date">
-                        📅 {{ diary.date }}
-                        <span style="color: #bdc3c7; font-size: 12px"> (ID: {{ diary.id }}) </span>
+                    <div class="diary-card">
+                        <div class="diary-header">
+                            <span class="diary-date">📅 {{ diary.date | format_date }}</span>
+                            <span class="diary-id">#{{ diary.id }}</span>
+                        </div>
+                        <div class="diary-content">
+                            {{ diary.content | truncate_content(150) | replace('\n', '<br>') | safe }}
+                        </div>
+                        <div class="diary-footer">
+                            <small class="created-at">
+                                作成: {{ diary.created_at }}
+                            </small>
+                        </div>
                     </div>
-                    <div class="diary-content">{{ diary.content | replace('\n', '<br />') | safe }}</div>
-                </div>
                 {% endfor %}
             </div>
-
-            <!-- 統計情報 -->
-            <div style="margin-top: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 5px; text-align: center">
-                <p style="color: #7f8c8d">📊 合計 <strong>{{ diaries|length }}</strong> 件の日記があります</p>
-            </div>
-            {% else %}
-            <!-- 日記がない場合 -->
-            <div style="text-align: center; padding: 50px; color: #7f8c8d">
-                <h2>📝 まだ日記がありません</h2>
-                <p style="margin: 20px 0">最初の日記を書いてみましょう！</p>
-                <a href="{{ url_for('post') }}" class="btn btn-primary">✏️ 日記を書く</a>
-            </div>
+            
+            <!-- ページネーション -->
+            {% if pagination and pagination.total_pages > 1 %}
+                <div class="pagination">
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('index', page=pagination.prev_num, search=search_query, sort=sort_by, order=order) }}" 
+                           class="btn">« 前へ</a>
+                    {% endif %}
+                    
+                    <span class="page-info">
+                        {{ pagination.page }} / {{ pagination.total_pages }}
+                    </span>
+                    
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('index', page=pagination.next_num, search=search_query, sort=sort_by, order=order) }}" 
+                           class="btn">次へ »</a>
+                    {% endif %}
+                </div>
             {% endif %}
-
-            <!-- アプリ情報 -->
-            <div style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 5px; text-align: center; border-top: 3px solid #3498db">
-                <h3>🌟 日記管理アプリ</h3>
-                <p style="color: #7f8c8d; margin-top: 10px">毎日の思い出を大切に記録しましょう</p>
+        {% else %}
+            <!-- 日記がない場合 -->
+            <div class="empty-state">
+                {% if search_query %}
+                    <h2>🔍 検索結果がありません</h2>
+                    <p>「{{ search_query }}」に一致する日記が見つかりませんでした。</p>
+                    <a href="{{ url_for('index') }}" class="btn">全ての日記を表示</a>
+                {% else %}
+                    <h2>📝 まだ日記がありません</h2>
+                    <p>最初の日記を書いてみましょう！</p>
+                    <a href="{{ url_for('post') }}" class="btn btn-primary">✏️ 日記を書く</a>
+                {% endif %}
             </div>
-        </div>
-    </body>
+        {% endif %}
+    </div>
+</body>
 </html>
