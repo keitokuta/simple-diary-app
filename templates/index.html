@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>日記一覧 - 日記管理アプリ</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>📖 日記一覧</h1>
+
+            <!-- ナビゲーション -->
+            <div class="nav">
+                <a href="{{ url_for('post') }}">✏️ 新しい日記を書く</a>
+            </div>
+
+            <!-- メッセージ表示 -->
+            {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+            <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %} {% endif %} {% endwith %}
+
+            <!-- 日記一覧 -->
+            {% if diaries %}
+            <div class="diary-list">
+                {% for diary in diaries %}
+                <div class="diary-card">
+                    <div class="diary-date">
+                        📅 {{ diary.date }}
+                        <span style="color: #bdc3c7; font-size: 12px"> (ID: {{ diary.id }}) </span>
+                    </div>
+                    <div class="diary-content">{{ diary.content | replace('\n', '<br />') | safe }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 統計情報 -->
+            <div style="margin-top: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 5px; text-align: center">
+                <p style="color: #7f8c8d">📊 合計 <strong>{{ diaries|length }}</strong> 件の日記があります</p>
+            </div>
+            {% else %}
+            <!-- 日記がない場合 -->
+            <div style="text-align: center; padding: 50px; color: #7f8c8d">
+                <h2>📝 まだ日記がありません</h2>
+                <p style="margin: 20px 0">最初の日記を書いてみましょう！</p>
+                <a href="{{ url_for('post') }}" class="btn btn-primary">✏️ 日記を書く</a>
+            </div>
+            {% endif %}
+
+            <!-- アプリ情報 -->
+            <div style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 5px; text-align: center; border-top: 3px solid #3498db">
+                <h3>🌟 日記管理アプリ</h3>
+                <p style="color: #7f8c8d; margin-top: 10px">毎日の思い出を大切に記録しましょう</p>
+            </div>
+        </div>
+    </body>
+</html>
